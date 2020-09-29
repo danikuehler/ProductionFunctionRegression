@@ -1,0 +1,83 @@
+---
+title: "danikue.com demo"
+author: 'Danielle Kuehler'
+output:
+  word_document:
+    fig_height: 3
+    fig_width: 5
+  html_document:
+    fig_height: 3
+    fig_width: 5
+  pdf_document:
+    fig_height: 4
+    fig_width: 6
+---
+
+```{r, setup, include=FALSE}
+require(mosaic)
+trellis.par.set(theme=theme.mosaic()) # change default color scheme for lattice
+knitr::opts_chunk$set(
+  tidy=TRUE,     # display code as typed
+  size="small",
+  comment=FALSE)   # slightly smaller font for code
+
+library(stargazer)
+library(visreg)
+library(car)
+```
+
+# Example 1
+I want to stimate the Cobb-Douglas production funciton $Y=K^{0.5}L^{0.5}\varepsilon$. After taking the log transformation, I can still apply the OLS estimator: $\log(Y)=0.5\log(K)+0.5\log(L)+u$, where $u=log(\varepsilon).$ I first generate $K$ from a log-normal distribution with `meanlog=0` and `sdlog=2`, $L$ from a log-normal distribution with `meanlog=0` and `sdlog=5`, and $\varepsilon$ from a log-normal distribution with `meanlog=0` and `sdlog=1`. The sample size is 100. Then I generate $Y$ using the Cobb-Douglas function, and combine the simulated data into a data.frame.
+
+```{r}
+nsample<-100 #samplesize
+set.seed(777)
+#Generating K
+K<-rlnorm(nsample,meanlog=0,sdlog=2)
+#Generating L
+L<-rlnorm(nsample, meanlog=0,sdlog=5) 
+#Generate $\varepsilon$
+u<-rlnorm(nsample,meanlog=0,sdlog=1)
+
+#Y using Cobb-Douglas
+Y<-sqrt(K)*sqrt(L)*u
+
+#Combining data
+mydata<-data.frame(Y,K,L)
+```
+
+***
+# Example 2
+Estimating the Cobb-Douglas production function: $\log(Y)=\beta_K\log(K)+\beta_L\log(L)$ and using `stargazer` to print out the regression on the 95\% confidence interval.
+
+```{r}
+result<-lm(formula=log(Y)~-1+log(K)+log(L), data=mydata)
+stargazer(result, type='text', ci=TRUE, ci.level=.95, digits=2, decimal.mark=".", report="vcs")
+```
+
+We reject the null hypothesis that $\beta_K$ = 0 because $\beta_K$ does not include zero
+
+***
+# Example 3
+Visualizing the sample production function.
+
+```{r}
+visreg<-(result)
+visreg2d(result, "K", "L")
+```
+
+
+***
+# Example 4
+Testing the hypothesis of constant return to scale.
+
+```{r}
+#TEST for constant returns to scale
+linearHypothesis(result,'log(K)+log(L)=1')
+```
+Conculsion: Production function has constant returns to scale, proven in test
+
+
+
+
+
